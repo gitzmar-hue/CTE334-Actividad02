@@ -3,6 +3,7 @@ CTE-334 - Desarrollo de Aplicaciones SIG
 Actividad 02 - Distancia y direccion con interfaz grafica
 Autor: Gitzy Yissel Andrade Andrade
 Numero de cuenta: 20161030363
+Fecha: 15 de octube 2026
 """
 
 import math

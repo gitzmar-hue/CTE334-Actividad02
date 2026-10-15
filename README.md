@@ -12,7 +12,7 @@ Aplicación de escritorio con interfaz gráfica (Tkinter/ttk) que recibe las coo
 
 ## 3. Versión de Python y ejecución
 
-- **Python:** 3.12 (probado con 3.12.3). Solo usa la biblioteca estándar (`math`, `tkinter`); no requiere instalar paquetes.
+- **Python:** 3.13 (probado con 3.13). Solo usa la biblioteca estándar (`math`, `tkinter`); no requiere instalar paquetes.
 - **Ejecución:**
 
 ```bash
