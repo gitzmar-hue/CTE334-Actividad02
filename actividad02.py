@@ -5,17 +5,107 @@ Autor: Gitzy Yissel Andrade Andrade
 Numero de cuenta: 20161030363
 """
 
+import math
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
+# Radio medio de la Tierra segun el valor indicado en la guia de la actividad
+RADIO_TIERRA_KM = 6371.0088
+
+LINEA = "-" * 40
 
 
 # ---------------------------------------------------------------------------
-# Etapa 1: solo la interfaz. El boton Calcular aun no procesa datos.
+# Logica geografica (misma responsabilidad y resultados que la Actividad 01).
+# Estas funciones no dependen de widgets ni muestran ventanas emergentes.
 # ---------------------------------------------------------------------------
+
+def validar_coordenadas(latitud, longitud):
+    """Comprueba que la latitud y la longitud esten dentro de los rangos
+    geograficos permitidos (-90 <= latitud <= 90, -180 <= longitud <= 180).
+
+    Retorna True si ambos valores son validos, False en caso contrario.
+    """
+    return -90 <= latitud <= 90 and -180 <= longitud <= 180
+
+
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    """Calcula la distancia entre dos puntos geograficos aplicando la
+    formula de Haversine. Recibe las coordenadas en grados decimales y
+    retorna la distancia resultante en kilometros.
+    """
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (math.sin(delta_phi / 2) ** 2
+         + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2)
+
+    distancia = 2 * RADIO_TIERRA_KM * math.asin(math.sqrt(a))
+    return distancia
+
+
+def determinar_direccion(lat1, lon1, lat2, lon2):
+    """Compara las latitudes y longitudes del Punto A y el Punto B para
+    establecer la ubicacion general de B respecto a A. Retorna uno de los
+    nueve resultados definidos en la guia de la actividad.
+    """
+    if lat2 > lat1 and lon2 == lon1:
+        return "Norte"
+    elif lat2 < lat1 and lon2 == lon1:
+        return "Sur"
+    elif lat2 == lat1 and lon2 > lon1:
+        return "Este"
+    elif lat2 == lat1 and lon2 < lon1:
+        return "Oeste"
+    elif lat2 > lat1 and lon2 > lon1:
+        return "Noreste"
+    elif lat2 > lat1 and lon2 < lon1:
+        return "Noroeste"
+    elif lat2 < lat1 and lon2 > lon1:
+        return "Sureste"
+    elif lat2 < lat1 and lon2 < lon1:
+        return "Suroeste"
+    else:
+        return "Misma ubicación"
+
+
+def clasificar_distancia(distancia):
+    """Clasifica la distancia (en km) segun los intervalos establecidos
+    en la guia de la actividad, respetando los valores frontera.
+    """
+    if distancia < 1:
+        return "Muy cercano"
+    elif distancia < 10:
+        return "Cercano"
+    elif distancia < 50:
+        return "Distancia media"
+    else:
+        return "Distante"
+
+
+# ---------------------------------------------------------------------------
+# Presentacion: construccion del informe, widget Text y ventanas emergentes.
+# ---------------------------------------------------------------------------
+
+def construir_informe(distancia, direccion, clasificacion):
+    """Arma el texto del resultado con el mismo formato de la Actividad 01."""
+    return "\n".join([
+        LINEA,
+        "RESULTADO DEL ANÁLISIS",
+        LINEA,
+        f"Distancia: {distancia:.3f} km",
+        f"Dirección: {direccion}",
+        f"Clasificación: {clasificacion}",
+        LINEA,
+    ])
+
 
 def mostrar_resultado(area_texto, informe):
-    """Reemplaza el contenido del widget Text por el informe indicado."""
+    """Reemplaza el contenido del widget Text por el informe indicado.
+    Si el informe esta vacio, solo borra el resultado anterior.
+    """
     area_texto.config(state="normal")
     area_texto.delete("1.0", tk.END)
     if informe:
@@ -23,9 +113,52 @@ def mostrar_resultado(area_texto, informe):
     area_texto.config(state="disabled")
 
 
+def convertir_entradas(entradas):
+    """Recupera con get() el contenido de las cuatro cajas de entrada y lo
+    convierte a float. Lanza ValueError si algun campo esta vacio o no es
+    un numero finito.
+    """
+    valores = []
+    for caja in entradas:
+        numero = float(caja.get().strip())
+        if not math.isfinite(numero):  # rechaza 'nan' e 'inf'
+            raise ValueError("valor no finito")
+        valores.append(numero)
+    return valores
+
+
 def ejecutar_calculo(entradas, area_texto):
-    """Callback provisional del boton Calcular (se conectara en la etapa 2)."""
-    mostrar_resultado(area_texto, "Cálculo pendiente de conectar.")
+    """Callback del boton Calcular.
+
+    Secuencia: 1) leer las cajas, 2) convertir a float (try/except),
+    3) validar rangos, 4) calcular con las funciones de la Actividad 01 y
+    5) reemplazar el resultado anterior en el widget Text.
+    """
+    try:
+        lat_a, lon_a, lat_b, lon_b = convertir_entradas(entradas)
+    except ValueError:
+        mostrar_resultado(area_texto, "")
+        messagebox.showerror(
+            "Entrada no numérica",
+            "Todos los campos deben contener valores numéricos.",
+        )
+        return
+
+    if not (validar_coordenadas(lat_a, lon_a)
+            and validar_coordenadas(lat_b, lon_b)):
+        mostrar_resultado(area_texto, "")
+        messagebox.showerror(
+            "Coordenada fuera de rango",
+            "La latitud debe estar entre -90 y 90 grados y la longitud "
+            "entre -180 y 180 grados.",
+        )
+        return
+
+    distancia = calcular_distancia(lat_a, lon_a, lat_b, lon_b)
+    direccion = determinar_direccion(lat_a, lon_a, lat_b, lon_b)
+    clasificacion = clasificar_distancia(distancia)
+
+    mostrar_resultado(area_texto, construir_informe(distancia, direccion, clasificacion))
 
 
 def limpiar_formulario(entradas, area_texto):
